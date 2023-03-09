@@ -1,0 +1,81 @@
+# Informations
+# - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Version : 1.0.0
+# Name : LdumayPayaraMicro
+# Description : Un conteneur Apps Java JEE avec Payara Miro
+# OS : Alpine Linux
+# JDK : 5.2021.10-jdk11
+# Payara Micro : 5.2021.10
+
+# Récupérartion de la dernière vesrion de Payara Micro
+FROM alpine:3.15.0
+
+# Informations de l'image
+LABEL "fr.ldumay.ldpayaramicro"="LDumay - Drupal 8"
+LABEL version="1.0.0"
+LABEL description="Description de LDumay - Drupal 8"
+
+# Mise à jour et mise à niveau du noyaux du conteneur
+RUN apk add tree nano openjdk11
+RUN apk update && apk upgrade
+
+## Création des dossier nécessaires
+RUN mkdir -p /opt/payara/deployments/
+
+# Ajout du .jar exécutable de Payara Micro
+ADD /jar_files_payara_micro/payara-micro-5.2021.10.jar /opt/payara/
+RUN mv /opt/payara/payara-micro-5.2021.10.jar /opt/payara/payara-micro.jar
+
+# Ajout du .sh de lancement de Payara Micro avec paramètres
+ADD /run_payara.sh /opt/payara/
+
+# Ajout des projet Java JEE dans le dossier de déploiement
+ADD /apps_java_shared/* /opt/payara/deployments/
+
+# Permet de copier des fichiers au conteneur
+# [--A--VERIFIER--]
+# COPY /apps_java_shared/* /opt/payara/deployments/
+
+# Définition du répertoire de travail
+WORKDIR /opt/payara
+
+# Création du point de montage nécessaire
+VOLUME /opt/payara/deployments/
+
+# Configuration des ports
+# - port nécessaire à Payara Micro :
+#   - 3306 - Apps
+EXPOSE 3306/tcp
+EXPOSE 3306/udp
+#   - 6900 - DataGrid - Name: Happy-Lionfish Lite
+EXPOSE 6900/tcp
+EXPOSE 6900/udp
+#   - 6901 - DataGrid - Excited-Ide Lite
+EXPOSE 6901/tcp
+EXPOSE 6901/udp
+#   - 8080 - Apps
+EXPOSE 8080/tcp
+EXPOSE 8080/udp
+
+# Variables nécessaires au bon fonctionnement du conteneur
+ENV LANG=fr_FR.UTF-8
+ENV LANGUAGE=fr_FR.UTF-8
+ENV LC_ALL=fr_FR.UTF-8
+ENV HOME_DIR=/opt/payara
+ENV PAYARA_HOME=/opt/payara
+ENV PAYARA_DIR=/opt/payara
+ENV SCRIPT_DIR=/opt/payara
+ENV DEPLOY_DIR=/opt/payara/deployments
+#   - Rattaché au fichier exécutable run_payara.sh
+ENV JVM_ARGS=
+ENV MEM_XSS=1024M
+ENV MEM_XMS=1024M
+#   - Max MEM_XMX - 1024M
+ENV MEM_XMX=1024M
+ENV MEM_MAX_RAM_PERCENTAGE=70.0
+
+# Configuration de l'utilisateur principal
+#USER payara
+
+# Intialisation du projet
+ENTRYPOINT ["/bin/sh", "run_payara.sh"]
